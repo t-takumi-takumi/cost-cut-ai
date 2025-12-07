@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI業務効率化診断ツール</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    integrity="sha512-VjJ2gGm0GHTRcd2l0YQoMaXRq+z21XmAhbA0cJ0H9pBXE9bTKCXgu0sNzWqkgIMcd6bAMyp6CF6f4wQXW2hN6A=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    body {
+      background: radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.15), transparent 25%),
+        radial-gradient(circle at 90% 10%, rgba(147, 51, 234, 0.18), transparent 25%),
+        radial-gradient(circle at 50% 80%, rgba(56, 189, 248, 0.12), transparent 25%),
+        #0f172a;
+      min-height: 100vh;
+      color: #e2e8f0;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .glass {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+    }
+    .pulse-border {
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .pulse-border::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 1rem;
+      padding: 1px;
+      background: linear-gradient(120deg, rgba(59, 130, 246, 0.8), rgba(147, 51, 234, 0.8));
+      mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      mask-composite: exclude;
+      animation: rotate 6s linear infinite;
+      z-index: -1;
+    }
+    @keyframes rotate {
+      to {
+        transform: rotate(1turn);
+      }
+    }
+    .sparkle-btn {
+      position: relative;
+      overflow: hidden;
+      transition: transform 150ms ease, box-shadow 150ms ease;
+    }
+    .sparkle-btn::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -25%;
+      width: 50%;
+      height: 200%;
+      background: linear-gradient(120deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0));
+      transform: skewX(-25deg);
+      animation: shine 3s ease-in-out infinite;
+    }
+    @keyframes shine {
+      from {
+        transform: translateX(-200%) skewX(-25deg);
+      }
+      to {
+        transform: translateX(300%) skewX(-25deg);
+      }
+    }
+    .sparkle-btn:hover {
+      transform: translateY(-1px) scale(1.01);
+      box-shadow: 0 10px 35px rgba(56, 189, 248, 0.3);
+    }
+    .loader-bar {
+      background: linear-gradient(90deg, rgba(56, 189, 248, 0.7), rgba(147, 51, 234, 0.8));
+      background-size: 200% 100%;
+      animation: shimmer 1.4s ease infinite;
+    }
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+    .floating-cta {
+      background: linear-gradient(135deg, #38bdf8, #8b5cf6);
+      box-shadow: 0 18px 50px rgba(59, 130, 246, 0.3);
+    }
+  </style>
+</head>
+<body class="pb-24">
+  <div class="max-w-5xl mx-auto px-4 py-12">
+    <header class="text-center mb-12">
+      <p class="inline-flex items-center px-4 py-2 rounded-full text-sm glass uppercase tracking-[0.2em] text-sky-200">
+        <i class="fa-solid fa-bolt mr-2 text-amber-300"></i> AI業務効率化診断
+      </p>
+      <h1 class="text-4xl md:text-6xl font-extrabold mt-4 text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-cyan-300 to-purple-400 drop-shadow-lg">
+        隠れた利益を、AIで最速発掘。
+      </h1>
+      <p class="mt-4 text-lg text-slate-200/80">たった1分で、あなたの会社の「隠れた利益」を発掘します。</p>
+    </header>
+
+    <main class="space-y-10">
+      <section class="glass rounded-2xl p-6 md:p-8 pulse-border">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
+          <h2 class="text-2xl font-semibold text-sky-100 flex items-center gap-2"><i class="fa-solid fa-sliders"></i> あなたの環境を教えてください</h2>
+          <span class="text-xs text-slate-300 uppercase tracking-wide">体験時間 約1分</span>
+        </div>
+        <form id="diagnose-form" class="space-y-8">
+          <div>
+            <h3 class="text-lg font-semibold text-sky-200 mb-3">利用中のツール</h3>
+            <div id="tool-container" class="grid md:grid-cols-2 gap-4"></div>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-6">
+            <div class="glass rounded-xl p-4 border border-slate-700/60">
+              <div class="flex items-center justify-between mb-2">
+                <label class="font-medium text-slate-100">従業員数</label>
+                <div class="flex items-center gap-2 text-sm text-slate-300">
+                  <button type="button" data-target="employee" class="adjust-btn w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700">-</button>
+                  <input id="employees" name="employees" type="number" min="1" max="1000" value="50" class="w-16 text-right bg-transparent border-b border-slate-600 focus:border-sky-400 outline-none" />
+                  <button type="button" data-target="employee" class="adjust-btn w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700">+</button>
+                </div>
+              </div>
+              <input id="employees-range" type="range" min="1" max="1000" value="50" class="w-full accent-sky-400" />
+            </div>
+
+            <div class="glass rounded-xl p-4 border border-slate-700/60">
+              <div class="flex items-center justify-between mb-2">
+                <label class="font-medium text-slate-100">平均時給 (円)</label>
+                <div class="flex items-center gap-2 text-sm text-slate-300">
+                  <button type="button" data-target="wage" class="adjust-btn w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700">-</button>
+                  <input id="wage" name="wage" type="number" min="800" max="10000" value="2000" class="w-20 text-right bg-transparent border-b border-slate-600 focus:border-sky-400 outline-none" />
+                  <button type="button" data-target="wage" class="adjust-btn w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700">+</button>
+                </div>
+              </div>
+              <input id="wage-range" type="range" min="800" max="10000" value="2000" step="100" class="w-full accent-purple-400" />
+            </div>
+
+            <div class="glass rounded-xl p-4 border border-slate-700/60">
+              <div class="flex items-center justify-between mb-2">
+                <label class="font-medium text-slate-100">月間の手作業時間 (時間/人)</label>
+                <div class="flex items-center gap-2 text-sm text-slate-300">
+                  <button type="button" data-target="manual" class="adjust-btn w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700">-</button>
+                  <input id="manual-hours" name="manualHours" type="number" min="1" max="200" value="20" class="w-16 text-right bg-transparent border-b border-slate-600 focus:border-sky-400 outline-none" />
+                  <button type="button" data-target="manual" class="adjust-btn w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700">+</button>
+                </div>
+              </div>
+              <input id="manual-range" type="range" min="1" max="200" value="20" class="w-full accent-sky-400" />
+            </div>
+          </div>
+
+          <div>
+            <label for="pain" class="font-medium text-sky-200 block mb-2">いま感じている課題・悩み</label>
+            <textarea id="pain" name="pain" rows="3" class="w-full glass rounded-xl p-4 border border-slate-700/60 focus:border-sky-400 outline-none placeholder:text-slate-400" placeholder="例えば：『毎朝のエクセル転記が辛い』『請求書PDFの保存が面倒』"></textarea>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="text-sm text-slate-400 flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-sky-300"></i> AIが最適な自動化シナリオを提案します</div>
+            <button type="submit" class="sparkle-btn relative px-6 py-3 rounded-xl font-semibold text-slate-950 bg-gradient-to-r from-sky-300 via-cyan-300 to-purple-300 shadow-lg shadow-sky-500/30 focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 focus:ring-offset-slate-900">診断を実行する</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="result-section" class="hidden glass rounded-2xl p-6 md:p-8 border border-slate-700/60">
+        <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
+          <div class="flex items-center gap-2 text-sky-200 font-semibold"><i class="fa-solid fa-ranking-star"></i> 診断結果</div>
+          <span class="text-xs text-slate-400">リアルタイムに算出</span>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6 items-start">
+          <div class="md:col-span-1">
+            <p class="text-slate-300 text-sm mb-2">想定できる年間コスト削減額</p>
+            <p class="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-cyan-200 to-purple-300 drop-shadow" id="savings-amount">-</p>
+            <p class="text-xs text-slate-400 mt-1">※トライアル導入レベルのシナリオを想定</p>
+          </div>
+          <div class="md:col-span-2">
+            <div id="report" class="prose prose-invert max-w-none"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="loading-overlay" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur flex flex-col items-center justify-center z-30 p-6 text-center">
+    <div class="glass rounded-2xl px-6 py-5 w-full max-w-md border border-slate-700/60">
+      <p class="text-sky-200 font-semibold mb-4 flex items-center justify-center gap-2"><i class="fa-solid fa-robot"></i> AIが思考中...</p>
+      <div class="w-full h-3 rounded-full bg-slate-800 overflow-hidden mb-3">
+        <div id="progress" class="h-full w-0 loader-bar rounded-full"></div>
+      </div>
+      <p id="progress-text" class="text-slate-300 text-sm">ツール構成を分析中...</p>
+    </div>
+  </div>
+
+  <a href="mailto:takeuchi@example.com" class="fixed bottom-6 right-6 px-5 py-3 rounded-full text-slate-950 font-semibold floating-cta flex items-center gap-2 z-20 shadow-lg shadow-purple-500/40">
+    <i class="fa-solid fa-comments"></i>
+    竹内へ実装相談をする（初回無料）
+  </a>
+
+  <script>
+    const toolsByCategory = {
+      'コミュニケーション': ['Slack', 'Chatwork', 'Teams', 'Zoom', 'LINE WORKS'],
+      'ドキュメント/Office': ['Excel', 'Word', 'PowerPoint', 'Google Sheets', 'Google Docs'],
+      'メール/日程': ['Outlook', 'Gmail', 'Google Calendar'],
+      '管理/DB': ['kintone', 'Salesforce', 'Notion', 'AirTable'],
+      'バックオフィス': ['freee', 'マネーフォワード', 'SmartHR']
+    };
+
+    const selectedTools = new Set();
+    const toolContainer = document.getElementById('tool-container');
+
+    const createToolCards = () => {
+      toolContainer.innerHTML = Object.entries(toolsByCategory)
+        .map(([category, tools]) => {
+          const cards = tools
+            .map(
+              (tool) => `
+                <button type="button" data-tool="${tool}" class="tool-card group flex items-center justify-between w-full glass border border-slate-700/60 hover:border-sky-400/60 rounded-xl px-4 py-3 transition duration-150">
+                  <span class="flex items-center gap-3 text-left text-slate-100">
+                    <i class="fa-solid fa-circle text-[10px] text-sky-300"></i>
+                    ${tool}
+                  </span>
+                  <span class="text-xs px-3 py-1 rounded-full bg-slate-800 text-slate-300 group-[.active]:bg-gradient-to-r group-[.active]:from-sky-500/40 group-[.active]:to-purple-500/40">選択</span>
+                </button>`
+            )
+            .join('');
+
+          return `
+            <div class="glass rounded-xl p-4 border border-slate-700/60 space-y-3">
+              <div class="flex items-center gap-2 text-sky-200 font-semibold"><i class="fa-solid fa-grid-2"></i> ${category}</div>
+              <div class="grid sm:grid-cols-2 gap-3">${cards}</div>
+            </div>
+          `;
+        })
+        .join('');
+    };
+
+    const syncNumberWithRange = (numberInput, rangeInput) => {
+      numberInput.addEventListener('input', () => {
+        const value = Number(numberInput.value);
+        rangeInput.value = value;
+      });
+      rangeInput.addEventListener('input', () => {
+        const value = Number(rangeInput.value);
+        numberInput.value = value;
+      });
+    };
+
+    const adjustButtons = document.querySelectorAll('.adjust-btn');
+    adjustButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.target;
+        const mapping = {
+          employee: ['employees', 'employees-range', 1],
+          wage: ['wage', 'wage-range', 100],
+          manual: ['manual-hours', 'manual-range', 1]
+        };
+        const [numId, rangeId, step] = mapping[target];
+        const numberInput = document.getElementById(numId);
+        const rangeInput = document.getElementById(rangeId);
+        const newValue = Math.min(Number(rangeInput.max), Math.max(Number(rangeInput.min), Number(numberInput.value) + (btn.textContent.trim() === '+' ? step : -step)));
+        numberInput.value = newValue;
+        rangeInput.value = newValue;
+      });
+    });
+
+    createToolCards();
+
+    toolContainer.addEventListener('click', (e) => {
+      const target = e.target.closest('.tool-card');
+      if (!target) return;
+      const tool = target.dataset.tool;
+      if (selectedTools.has(tool)) {
+        selectedTools.delete(tool);
+        target.classList.remove('active', 'border-sky-400');
+      } else {
+        selectedTools.add(tool);
+        target.classList.add('active', 'border-sky-400');
+      }
+    });
+
+    syncNumberWithRange(document.getElementById('employees'), document.getElementById('employees-range'));
+    syncNumberWithRange(document.getElementById('wage'), document.getElementById('wage-range'));
+    syncNumberWithRange(document.getElementById('manual-hours'), document.getElementById('manual-range'));
+
+    const form = document.getElementById('diagnose-form');
+    const overlay = document.getElementById('loading-overlay');
+    const progressBar = document.getElementById('progress');
+    const progressText = document.getElementById('progress-text');
+    const resultSection = document.getElementById('result-section');
+    const savingsAmount = document.getElementById('savings-amount');
+    const reportEl = document.getElementById('report');
+
+    const progressMessages = ['ツール構成を分析中...', 'ボトルネックを特定中...', '削減額を計算中...']
+
+    const showOverlay = () => {
+      overlay.classList.remove('hidden');
+      let progress = 0;
+      let messageIndex = 0;
+      progressBar.style.width = '0%';
+      progressText.textContent = progressMessages[0];
+
+      const interval = setInterval(() => {
+        progress = Math.min(100, progress + 8);
+        progressBar.style.width = `${progress}%`;
+        if (progress % 30 === 0) {
+          messageIndex = (messageIndex + 1) % progressMessages.length;
+          progressText.textContent = progressMessages[messageIndex];
+        }
+        if (progress >= 100) {
+          clearInterval(interval);
+        }
+      }, 150);
+
+      return interval;
+    };
+
+    const animateNumber = (element, target) => {
+      const duration = 1200;
+      const start = 0;
+      const startTime = performance.now();
+
+      const step = (now) => {
+        const progress = Math.min(1, (now - startTime) / duration);
+        const value = Math.floor(progress * (target - start) + start);
+        element.textContent = `¥${value.toLocaleString()}`;
+        if (progress < 1) requestAnimationFrame(step);
+      };
+
+      requestAnimationFrame(step);
+    };
+
+    const launchConfetti = () => {
+      const duration = 1500;
+      const end = Date.now() + duration;
+      const colors = ['#38bdf8', '#8b5cf6', '#22d3ee'];
+
+      (function frame() {
+        confetti({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors
+        });
+        confetti({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors
+        });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      })();
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        tools: Array.from(selectedTools),
+        employees: Number(document.getElementById('employees').value),
+        hourlyRate: Number(document.getElementById('wage').value),
+        manualHours: Number(document.getElementById('manual-hours').value),
+        pain: document.getElementById('pain').value.trim()
+      };
+
+      const intervalId = showOverlay();
+
+      try {
+        const res = await fetch('/api/diagnose', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        clearInterval(intervalId);
+        overlay.classList.add('hidden');
+        if (!res.ok) throw new Error(data.error || '診断に失敗しました');
+        savingsAmount.textContent = '¥0';
+        animateNumber(savingsAmount, Number(data.cost_reduction));
+        reportEl.innerHTML = marked.parse(data.report || '');
+        resultSection.classList.remove('hidden');
+        launchConfetti();
+        resultSection.scrollIntoView({ behavior: 'smooth' });
+      } catch (error) {
+        clearInterval(intervalId);
+        overlay.classList.add('hidden');
+        alert(error.message || 'エラーが発生しました');
+      }
+    });
+  </script>
+</body>
+</html>

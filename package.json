@@ -1,0 +1,9 @@
+{
+  "name": "cost-cut-ai",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {}
+}
