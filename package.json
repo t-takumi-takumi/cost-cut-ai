@@ -5,5 +5,7 @@
   "scripts": {
     "dev": "vercel dev"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@google/generative-ai": "^0.11.0"
+  }
 }
