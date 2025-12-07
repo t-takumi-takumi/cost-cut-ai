@@ -21,7 +21,7 @@ module.exports = async function handler(req, res) {
     const userPrompt = `選択されたツール: ${tools.join(', ') || '未選択'}\n従業員数: ${employees}名\n平均時給: ${hourlyRate}円\n月間手作業時間(1人あたり): ${manualHours}時間\n悩み・課題: ${pain || '未記入'}\n\nJSON形式で、cost_reductionは年間で削減できる概算コスト(円)を数値で、reportはマークダウンで提案書を出力してください。`;
 
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.0-pro' });
 
     const response = await model.generateContent({
       contents: [
